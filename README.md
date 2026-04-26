@@ -1,4 +1,4 @@
-# Tank is still in working progress
+# Tank
 
 > A Flipper Zero-inspired portable hacking & RF toolkit built on the ESP32. Scan WiFi, sniff BLE devices, detect trackers, capture 2.4GHz RF packets, and execute BadUSB payloads wirelessly through a Raspberry Pi Pico — all from a compact handheld device with an OLED display.
 
@@ -106,7 +106,7 @@ Place DuckyScript payloads in `/tank/ducky/` to run them via **Pico Control → 
 
 ---
 
-## Pico BLE Rubber Ducky
+## Pico BLE Rubber Ducky is still in develop
 
 Tank can pair with a Raspberry Pi Pico running a BLE UART HID service and send keystrokes wirelessly.
 
