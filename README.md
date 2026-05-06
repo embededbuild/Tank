@@ -1,143 +1,111 @@
-# Tank
+# Tank v7 — ESP32 Wireless Research Tool
 
-> A Flipper Zero-inspired portable hacking & RF toolkit built on the ESP32. Scan WiFi, sniff BLE devices, detect trackers, capture 2.4GHz RF packets, and execute BadUSB payloads wirelessly through a Raspberry Pi Pico — all from a compact handheld device with an OLED display.
+> A portable, handheld wireless analysis platform built on the ESP32 with a 128×64 OLED display, 4-button navigation, nRF24L01+ radio, and SD card logging.
 
 ---
 
 ## Features
 
-- **WiFi** — Scan all networks or filter open-only, connect to a configured AP, and save results to SD
-- **BLE Scanner** — Discover nearby Bluetooth Low Energy devices; auto-detects AirTags, Tile, and Samsung SmartTags
-- **Pico Commander** — Wirelessly connect to a Raspberry Pi Pico running a BLE UART service and execute HID payloads (BLE Rubber Ducky)
-- **RF24 / 2.4GHz** — Spectrum scanning, packet capture, and replay using an nRF24L01+ module
-- **SD Card** — Browse, view, and delete saved scan data; store and stream DuckyScript payloads
-- **Status Screen** — Live system info: WiFi, BLE, Pico connection, nRF24, SD, CPU freq, and free RAM
+| Module | Capability |
+|---|---|
+| **WiFi Scanner** | Scan all networks or open-only; logs SSID, BSSID, channel, RSSI, encryption |
+| **BLE Scanner** | Discover BLE devices; flags Apple / Tile / Samsung trackers by manufacturer ID |
+| **RF24 Tools** | Spectrum analysis across all 125 channels, packet capture, and packet replay |
+| **Probe Sniffer** | Promiscuous-mode channel-hopping capture of 802.11 probe requests |
+| **Device Spoofing** | Create, activate, and manage MAC/IP spoof profiles stored on SD |
+| **SD Card Browser** | Browse, view, and delete saved scan files from the onboard SD |
+| **Status Screen** | Live heap, packet counts, and peripheral health |
 
 ---
 
 ## Hardware
 
-| Component | Details |
-|-----------|---------|
-| **MCU** | ESP32 (WROOM / DevKit) |
-| **Display** | SSD1306 128×64 OLED (I²C) |
-| **RF Module** | nRF24L01+ (SPI via VSPI) |
-| **Storage** | MicroSD card (SPI) |
-| **Payload Runner** | Raspberry Pi Pico W (BLE UART HID) |
-| **Buttons** | 4× momentary push buttons (Up / Down / Select / Back) |
+### Bill of Materials
 
-### Pin Mapping
+| Component | Notes |
+|---|---|
+| ESP32 dev board | Any standard 38-pin module |
+| SSD1306 OLED 128×64 | I²C, connected on pins 21/22 |
+| nRF24L01+ module | SPI via VSPI bus |
+| MicroSD card module | Shares VSPI with nRF24 |
+| 4× tactile buttons | UP / DOWN / SELECT / BACK |
+| MicroSD card | FAT32 formatted |
 
-**OLED (I²C)**
-| Signal | GPIO |
-|--------|------|
-| SDA | 21 |
-| SCL | 22 |
+### Pin Map
 
-**nRF24L01+ (VSPI)**
-| Signal | GPIO |
-|--------|------|
-| CE | 4 |
-| CSN | 5 |
-| SCK | 18 |
-| MOSI | 23 |
-| MISO | 19 |
+```
+OLED SDA  → GPIO 21
+OLED SCL  → GPIO 22
 
-**SD Card (SPI — shared with nRF24)**
-| Signal | GPIO |
-|--------|------|
-| CS | 15 |
-| SCK | 18 |
-| MISO | 19 |
-| MOSI | 23 |
-| Detect | 34 |
+SD  CS    → GPIO 15
+SD  SCK   → GPIO 18
+SD  MISO  → GPIO 19
+SD  MOSI  → GPIO 23
 
-**Buttons (INPUT_PULLUP — active LOW)**
-| Button | GPIO |
-|--------|------|
-| Up | 32 |
-| Down | 33 |
-| Select | 25 |
-| Back | 26 |
+nRF24 CE  → GPIO 4
+nRF24 CSN → GPIO 5
+
+BTN UP    → GPIO 32
+BTN DOWN  → GPIO 33
+BTN SELECT→ GPIO 25
+BTN BACK  → GPIO 26
+```
+
+> **Note:** The nRF24L01+ and SD card share the VSPI bus. The SD chip-select is pulled HIGH before nRF24 operations to prevent bus contention.
 
 ---
 
 ## Software Dependencies
 
-Install via Arduino Library Manager or PlatformIO:
+Install these libraries via the Arduino Library Manager or PlatformIO:
 
-| Library | Purpose |
-|---------|---------|
-| `U8g2` | OLED display driver |
-| `NimBLE-Arduino` | Bluetooth Low Energy (scan + client) |
-| `RF24` | nRF24L01+ radio |
-| `SD` | MicroSD file system |
-| `Wire` / `SPI` | Built-in ESP32 core libraries |
-
----
-
-## Getting Started
-
-1. **Clone this repo** and open the `.ino` file in Arduino IDE (or PlatformIO).
-2. **Install dependencies** listed above.
-3. **Set your WiFi credentials** in the source if you want the Connect feature:
-   ```cpp
-   const char* WIFI_SSID     = "YourSSID";
-   const char* WIFI_PASSWORD = "YourPassword";
-   ```
-4. **Flash to your ESP32.**
-5. On first boot, Tank initializes BLE, nRF24, and SD card, then drops you into the main menu.
+```
+U8g2          — OLED display driver
+NimBLE-Arduino — Lightweight BLE stack
+RF24          — nRF24L01+ driver
+SD (built-in) — SD card filesystem
+FS (built-in) — ESP32 filesystem abstraction
+WiFi (built-in)— ESP32 WiFi stack
+```
 
 ---
 
-## SD Card Layout
+## Building & Flashing
 
-Tank automatically creates the following directory structure:
+1. Open the `.ino` file in Arduino IDE.
+2. Select your ESP32 board and COM port.
+3. Install all dependencies listed above.
+4. Flash at 115200 baud.
+
+---
+
+## SD Card Structure
+
+The firmware auto-creates the following directory tree on first boot:
 
 ```
 /tank/
-├── wifi/       ← Saved WiFi scan results
-├── ble/        ← Saved BLE scan results
-├── rf24/       ← Saved RF24 capture data
-└── ducky/      ← DuckyScript payload files (.txt / .duck)
+├── wifi/       — WiFi scan results
+├── ble/        — BLE scan results
+├── rf24/       — RF24 packet captures
+├── probes/     — Probe request captures
+└── spoof/      — Spoof profiles (profiles.txt)
 ```
 
-Place DuckyScript payloads in `/tank/ducky/` to run them via **Pico Control → Run Payload**.
-
----
-
-## Pico BLE Rubber Ducky is still in develop
-
-Tank can pair with a Raspberry Pi Pico running a BLE UART HID service and send keystrokes wirelessly.
-
-**Pico firmware requirements:**
-- Device name must be `PicoDucky-<AUTH_CODE>` (e.g. `PicoDucky-A1B2`)
-- Exposes BLE UART service: `0000FFE0-0000-1000-8000-00805F9B34FB`
-- RX characteristic: `0000FFE2-0000-1000-8000-00805F9B34FB`
-
-**Supported commands sent from Tank to the Pico:**
-
-| Command | Description |
-|---------|-------------|
-| `AUTH:<code>` | Authenticate the session |
-| `TYPE:<text>` | Type a string |
-| `COMBO:<keys>` | Send a key combination (e.g. `GUI+r`) |
-| `DELAY:<ms>` | Wait for a specified number of milliseconds |
-| `ENTER` / `BACKSPACE` / `TAB` / `ESC` | Send individual keys |
-| `PAYLOAD:START:<name>` | Begin streaming a payload |
-| `LINE:<content>` | Send one line of a payload |
-| `PAYLOAD:END` | Signal end of payload |
-| `PING` / `STATUS` | Health check |
+All log files are timestamped using uptime (`HHhMMmSSs` format).
 
 ---
 
 ## Navigation
 
-| Button | Action |
-|--------|--------|
-| **Up / Down** | Navigate menu or scroll results |
-| **Select** | Confirm / enter submenu / run action |
-| **Back** | Return to previous menu |
+```
+[ UP ]   / [ DOWN ]  — scroll menu or results
+[ SELECT ]           — confirm / enter submenu / run action
+[ BACK ]             — return to previous menu / stop active scan
+```
+
+During **Probe Sniffing**, press `BACK` to stop the capture and display results.  
+During **RF24 Replay**, press `BACK` to abort mid-replay.
 
 ---
 
@@ -145,57 +113,75 @@ Tank can pair with a Raspberry Pi Pico running a BLE UART HID service and send k
 
 ```
 Main Menu
-├── 1. WiFi
-│   ├── Scan All
-│   ├── Open Only
-│   ├── Connect
+├── 1. WiFi Scan
+│   ├── Scan All Networks
+│   ├── Scan Open Only
 │   └── Save Last Scan
 ├── 2. BLE Scan
 │   ├── Scan Devices
 │   ├── Find Trackers
-│   └── Save Last Scan
-├── 3. Pico Control
-│   ├── Connect to Pico
-│   ├── Disconnect
-│   ├── Type Text
-│   ├── Send Combo
-│   ├── Run Payload
-│   ├── Send Command
-│   └── Status
-├── 4. RF24
-│   ├── Scan Spectrum
-│   ├── Capture Pkts
-│   ├── Replay Pkts
+│   └── Save Scan
+├── 3. RF24 Tools
+│   ├── Spectrum Analyze   (125 channels, 2 s each)
+│   ├── Capture Packets    (up to 200 packets)
+│   ├── Replay Packets     (30 s window)
 │   └── Save Capture
-├── 5. SD Card
+├── 4. Probe Sniff
+│   ├── Start Sniffing     (channel-hopping 1–11)
+│   ├── Stop Sniffing
+│   └── Save Probes
+├── 5. Device Spoof
+│   ├── Create Profile     (random MAC + IP)
+│   ├── Activate Profile
+│   └── Delete Profile
+├── 6. SD Card
 │   ├── Browse Files
 │   ├── Card Info
 │   └── Delete File
-└── 6. Status
+└── 7. Status
 ```
 
 ---
 
-## Tracker Detection
+## Spoof Profiles
 
-The BLE scanner automatically identifies common tracking devices by manufacturer data and service UUIDs:
+Profiles are stored in `/tank/spoof/profiles.txt` as pipe-delimited records:
 
-| Tracker | Detection Method |
-|---------|-----------------|
-| Apple AirTag | Manufacturer ID `0x004C` + payload bytes `0x12 0x19` |
-| Tile | Manufacturer ID `0x00E0` or service UUID `FEED` |
-| Samsung SmartTag | Manufacturer ID `0x0075` or service UUID `FD5A` |
+```
+ProfileName|02:XX:XX:XX:XX:XX|192.168.1.XXX|0
+```
 
-Detected trackers are flagged with `!` in scan results.
+Fields: `name | mac | ip | active (0/1)`
 
----
-
-## Version
-
-**Tank v3.0** — Pico Commander Edition
+New profiles are generated with a locally-administered MAC address (first octet `02`) and a random host IP in the `192.168.1.0/24` range.
 
 ---
 
+## Boot Sequence
+
+On power-up the device runs a glitchy animated splash, then initializes peripherals in order:
+
+1. BLE stack (`NimBLE`)
+2. nRF24L01+ radio
+3. SD card + directory tree
+4. Spoof profile loader
+5. WiFi disabled (conserves power until needed)
+
+---
+
+## Legal Notice
+
+This tool is intended for **authorized security research, educational use, and testing on networks and devices you own or have explicit permission to test.**
+
+Unauthorized interception of wireless communications, unauthorized access to computer networks, and MAC address spoofing on networks without permission may violate local laws including (but not limited to) the Computer Fraud and Abuse Act (US), the Computer Misuse Act (UK), and equivalent legislation in other jurisdictions.
+
+**Use responsibly. The authors assume no liability for misuse. Aka you're stupidity is not my fault nor really anyone but yourself. Don't be a fucktard**
+
+---
+
+## License
+
+MIT — see `LICENSE` file for details.
 ## Disclaimer
 
-This project is intended for **educational and authorized security research purposes only**. Do not use Tank on networks, devices, or systems you do not own or have explicit permission to test. The authors are not responsible for misuse.
+This project is intended for **educational and authorized security research purposes only**. Do not use Tank on networks, devices, or systems you do not own or have explicit permission to test. The authors are not responsible for misuse. Aka you're stupidity is not my fault nor really anyone but yourself. Don't be a fucktard
