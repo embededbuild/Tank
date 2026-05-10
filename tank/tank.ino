@@ -394,7 +394,7 @@ void drawResult() {
 
 void drawMenu() {
   switch (currentMenu) {
-    case MENU_MAIN:       drawMenuList("TANK v7", mainItems, mainCount); break;
+    case MENU_MAIN:       drawMenuList("TANK", mainItems, mainCount); break;
     case MENU_WIFI:       drawMenuList("WIFI", wifiItems, wifiCount); break;
     case MENU_BLE_SCAN:   drawMenuList("BLE SCAN", bleItems, bleCount); break;
     case MENU_RF24:       drawMenuList("RF24", rf24Items, rf24Count); break;
@@ -445,7 +445,6 @@ void drawGlitchEffect(int intensity, int offset) {
   u8g2.drawStr((128 - w) / 2 + random(-offset, offset), 30 + random(-offset / 2, offset / 2), "Tank");
   u8g2.setFont(u8g2_font_5x7_tf);
   char verBuf[16];
-  snprintf(verBuf, sizeof(verBuf), "v7.0");
   u8g2.drawStr(82 + random(-offset / 2, offset / 2), 42 + random(-offset / 2, offset / 2), verBuf);
   u8g2.drawStr(2  + random(-offset / 2, offset / 2), 55 + random(-offset / 2, offset / 2), "READY");
   for (int i = 0; i < intensity * 5; i++) {
@@ -470,8 +469,7 @@ void drawSplash() {
   int w = u8g2.getStrWidth("Tank");
   u8g2.drawStr((128 - w) / 2, 30, "Tank");
   u8g2.setFont(u8g2_font_5x7_tf);
-  u8g2.drawStr(82, 42, "v7.0");
-  u8g2.drawStr(2, 55, "PROBE+SPOOF");
+  u8g2.drawStr(2, 55, "embededbuild");
   oledSend();
   delay(500);
 
@@ -1222,7 +1220,7 @@ void drawStatusScreen() {
   resultOriginMenu = MENU_MAIN;
   resultContext    = CTX_NONE;
 
-  addResult("Tank v7.0");
+  addResult("Tank");
   addResult("----------------");
   addResult("nRF24: " + String(nrfReady ? "READY" : "FAIL"));
   addResult("BLE: "   + String(bleReady  ? "READY" : "FAIL"));
