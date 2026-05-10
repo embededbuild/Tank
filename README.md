@@ -1,4 +1,4 @@
-# Tank v7 — ESP32 Wireless Research Tool
+# Tank  — ESP32 Wireless Research Tool
 
 > A portable, handheld wireless analysis platform built on the ESP32 with a 128×64 OLED display, 4-button navigation, nRF24L01+ radio, and SD card logging.
 
